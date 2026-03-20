@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ projeto.nome }}</title>
+  <link rel="icon" href="{{ url_for('favicon') }}?v=2" sizes="any">
+  <link rel="shortcut icon" href="{{ url_for('favicon') }}?v=2" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="detail-page">
+  <header class="topbar topbar--detail">
+    <div class="brand">
+      <img class="brand-logo" src="{{ url_for('favicon') }}?v=2" alt="SiteJP">
+      <span>SiteJP</span>
+    </div>
+    <div class="topbar-actions">
+      <a class="btn ghost btn-back" href="{{ url_for('dashboard') }}">Voltar</a>
+    </div>
+  </header>
+
+  <main class="page page--detail">
+    <section class="detail-hero">
+      <div class="detail-hero-copy">
+        <div class="crumb">Dashboard / Projetos</div>
+        <h1 class="page-title">{{ projeto.nome }}</h1>
+        {% if projeto.responsavel %}
+          <p class="page-subtitle"><b>Funcionario:</b> {{ projeto.responsavel }}</p>
+        {% endif %}
+        <p class="page-subtitle">{{ projeto.descricao }}</p>
+      </div>
+
+      <div class="winner-pill winner-pill--detail">
+        <span class="pill-label">Melhor metodo</span>
+        <span class="pill-value">{{ display_method_name(projeto.melhor_metodo) }}</span>
+      </div>
+    </section>
+
+    <section class="detail-overview">
+      <div class="card card-hero detail-card detail-card--highlight">
+        <div class="card-hero-top">
+          <span class="tag tag-win">Metodo vencedor</span>
+          <span class="tag tag-soft">{{ demandas|length }} periodos</span>
+        </div>
+        <div class="hero-title">{{ display_method_name(projeto.melhor_metodo) }}</div>
+        <div class="hero-metrics">
+          <div class="metric">
+            <div class="metric-label">MAD</div>
+            <div class="metric-value">{% if projeto.mad is not none %}{{ projeto.mad | round(2) }}{% else %}-{% endif %}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Prox. previsao (P+1)</div>
+            <div class="metric-value">{% if projeto.previsao_prox is not none %}{{ projeto.previsao_prox | round(2) }}{% else %}-{% endif %}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-compact detail-card">
+        <div class="card-title-row">
+          <h3>Demandas registradas</h3>
+          <span class="badge">{{ demandas|length }} periodos</span>
+        </div>
+        <div class="table-wrap table-wrap--compact">
+          <table class="tabela tabela--compact">
+            <thead>
+              <tr><th>Periodo</th><th>Demanda</th></tr>
+            </thead>
+            <tbody>
+              {% for d in demandas %}
+                <tr><td>{{ d.periodo }}</td><td>{{ d.valor }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <div class="section-head">
+        <h2>Modelos testados</h2>
+        <small>Visual mais limpo para comparar previsao, erro e desempenho de cada metodo.</small>
+      </div>
+
+      <div class="accordion accordion--detail">
+        {% for r in detalhes %}
+          {% set mc = model_charts.get(r.name) %}
+          <details class="acc-item acc-item--detail" {% if r.name == projeto.melhor_metodo %}open{% endif %}>
+            <summary class="acc-sum acc-sum--detail">
+              <div class="acc-left">
+                <span class="acc-title">{{ display_method_name(r.name) }}</span>
+                {% if r.name == projeto.melhor_metodo %}
+                  <span class="tag tag-win">Melhor</span>
+                {% endif %}
+              </div>
+              <div class="acc-right">
+                <span class="mini">MAD: {% if r.mad is not none %}{{ r.mad | round(2) }}{% else %}-{% endif %}</span>
+                <span class="mini">P+1: {% if r.next_forecast is not none %}{{ r.next_forecast | round(2) }}{% else %}-{% endif %}</span>
+              </div>
+            </summary>
+
+            <div class="acc-body acc-body--detail">
+              <div class="chart-panel">
+                <div class="chart-panel-head">
+                  <h3>{{ display_method_name(r.name) }}</h3>
+                  <p>Demanda real x previsao do metodo</p>
+                </div>
+
+                <div class="chart-host chart-host--detail model-chart">
+                  {% if mc and mc.has_data %}
+                    <svg viewBox="0 0 {{ mc.width }} {{ mc.height }}" class="chart-svg">
+                      {% for g in mc.y_grid %}
+                        <line class="chart-grid" x1="{{ mc.y_axis.x1 }}" y1="{{ g.y }}" x2="{{ mc.x_axis.x2 }}" y2="{{ g.y }}" />
+                        <text class="chart-label chart-label-soft" x="{{ mc.y_axis.x1 - 6 }}" y="{{ g.y - 2 }}" text-anchor="end">{{ g.label }}</text>
+                      {% endfor %}
+                      <line class="chart-axis" x1="{{ mc.x_axis.x1 }}" y1="{{ mc.x_axis.y1 }}" x2="{{ mc.x_axis.x2 }}" y2="{{ mc.x_axis.y2 }}" />
+                      <line class="chart-axis" x1="{{ mc.y_axis.x1 }}" y1="{{ mc.y_axis.y1 }}" x2="{{ mc.y_axis.x2 }}" y2="{{ mc.y_axis.y2 }}" />
+                      <path d="{{ mc.real_path }}" fill="none" stroke="#f5be3b" stroke-width="2.8" />
+                      <path d="{{ mc.pred_path }}" fill="none" stroke="#2ea7ff" stroke-width="2.6" stroke-dasharray="8 6" />
+                      {% for p in mc.real_points %}
+                        <circle cx="{{ p.x }}" cy="{{ p.y }}" r="2.8" fill="#f5be3b" />
+                      {% endfor %}
+                      {% for p in mc.pred_points %}
+                        <circle cx="{{ p.x }}" cy="{{ p.y }}" r="2.4" fill="#2ea7ff" />
+                      {% endfor %}
+                      {% for t in mc.x_ticks %}
+                        <text class="chart-label chart-label-soft" x="{{ t.x }}" y="{{ mc.x_axis.y1 + 18 }}" text-anchor="middle">{{ t.label }}</text>
+                      {% endfor %}
+                    </svg>
+                  {% else %}
+                    <div class="chart-empty">Sem dados suficientes para este grafico.</div>
+                  {% endif %}
+                </div>
+
+                <div class="chart-legend-inline chart-legend-inline--detail">
+                  <span><i class="dot dot-real"></i> Demanda real</span>
+                  <span><i class="dot dot-pred"></i> Previsao do metodo</span>
+                </div>
+              </div>
+
+              <div class="table-wrap table-wrap--detail">
+                <table class="tabela tabela--compact">
+                  <thead>
+                    <tr><th>Periodo</th><th>D. Real</th><th>Previsao</th><th>Erro</th><th>|Erro|</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for i in range(demandas|length) %}
+                      <tr>
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ demandas[i].valor }}</td>
+                        <td>{% if r.forecast[i] is not none %}{{ r.forecast[i] | round(2) }}{% else %}-{% endif %}</td>
+                        <td>{% if r.error[i] is not none %}{{ r.error[i] | round(2) }}{% else %}-{% endif %}</td>
+                        <td>{% if r.abs_error[i] is not none %}{{ r.abs_error[i] | round(2) }}{% else %}-{% endif %}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>

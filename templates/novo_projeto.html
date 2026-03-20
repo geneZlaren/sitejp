@@ -1,0 +1,52 @@
+<!-- templates/novo_projeto.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Projeto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        function gerarCamposDemanda() {
+            const container = document.getElementById('campos-demanda');
+            const n = document.getElementById('periodos').value;
+            container.innerHTML = '';
+
+            for (let i = 1; i <= n; i++) {
+                const label = document.createElement('label');
+                label.textContent = `Período ${i}`;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.name = `demanda_${i}`;
+                input.required = true;
+                input.className = 'input-text';
+                container.appendChild(label);
+                container.appendChild(input);
+            }
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">SiteJP</div>
+        <a href="{{ url_for('dashboard') }}">← Voltar</a>
+    </nav>
+
+    <main class="container">
+        <h1>Criar Novo Projeto</h1>
+        <form method="POST">
+            <label>Nome:</label>
+            <input type="text" name="nome" class="input-text" required>
+
+            <label>Descrição:</label>
+            <textarea name="descricao" class="input-text" required></textarea>
+
+            <label>Número de Períodos:</label>
+            <input type="number" name="periodos" id="periodos" class="input-text" min="1" required oninput="gerarCamposDemanda()">
+
+            <div id="campos-demanda"></div>
+
+            <button type="submit" class="btn">Salvar Projeto</button>
+        </form>
+    </main>
+</body>
+</html>

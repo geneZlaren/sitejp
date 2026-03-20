@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastro - SiteJP</title>
+  <link rel="icon" href="{{ url_for('favicon') }}?v=2" sizes="any">
+  <link rel="shortcut icon" href="{{ url_for('favicon') }}?v=2" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body class="auth-page">
+  <div class="auth-noise"></div>
+
+  <header class="topbar topbar--auth">
+    <div class="brand brand--auth">
+      <img class="brand-logo" src="{{ url_for('favicon') }}?v=2" alt="SiteJP">
+      <span>SiteJP</span>
+    </div>
+    <a class="btn ghost" href="{{ url_for('login') }}">Voltar ao login</a>
+  </header>
+
+  <main class="auth-shell">
+    <section class="auth-hero">
+      <p class="eyebrow">Cadastro corporativo</p>
+      <h1>Novo acesso com validacao interna da equipe.</h1>
+      <p class="hero-copy">
+        O usuario envia empresa, email e senha. A equipe de TI aprova ou bloqueia pela pagina administrativa, sem depender de confirmacao por email.
+      </p>
+      <div class="hero-points">
+        <div class="hero-point"><span></span> Menos atrito no onboarding</div>
+        <div class="hero-point"><span></span> Controle centralizado de acessos</div>
+        <div class="hero-point"><span></span> Processo mais seguro para a operacao</div>
+      </div>
+    </section>
+
+    <section class="login-card auth-card" data-tilt-card>
+      <div class="auth-card-top">
+        <p class="auth-kicker">Solicitacao de conta</p>
+        <h2>Criar novo cadastro</h2>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alerts">
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('cadastro') }}" class="auth-form">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="seu@email.com" required>
+        </div>
+
+        <div class="field">
+          <label>Empresa</label>
+          <input type="text" name="empresa" placeholder="Nome da empresa" required>
+        </div>
+
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" name="senha" placeholder="Crie uma senha" required>
+        </div>
+
+        <div class="field">
+          <label>Confirmar senha</label>
+          <input type="password" name="confirmar" placeholder="Repita a senha" required>
+        </div>
+
+        <button class="btn primary btn-block" type="submit">Enviar para aprovacao</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

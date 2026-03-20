@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - SiteJP</title>
+  <link rel="icon" href="{{ url_for('favicon') }}?v=2" sizes="any">
+  <link rel="shortcut icon" href="{{ url_for('favicon') }}?v=2" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body class="auth-page">
+  <div class="auth-noise"></div>
+
+  <header class="topbar topbar--auth">
+    <div class="brand brand--auth">
+      <img class="brand-logo" src="{{ url_for('favicon') }}?v=2" alt="SiteJP">
+      <span>SiteJP</span>
+    </div>
+    <a class="btn ghost" href="{{ url_for('admin_login') }}">Area administrativa</a>
+  </header>
+
+  <main class="auth-shell">
+    <section class="auth-hero">
+      <p class="eyebrow">Planejamento de demanda</p>
+      <h1>Decisoes melhores, com uma entrada mais profissional.</h1>
+      <p class="hero-copy">
+        O cadastro agora passa por aprovacao da equipe de TI. Depois da liberacao, o usuario acessa normalmente e gerencia seus projetos sem friccao.
+      </p>
+      <div class="hero-points">
+        <div class="hero-point"><span></span> Calculo de melhor rota em instantes</div>
+        <div class="hero-point"><span></span> Dashboard limpo organizado e objetivo</div>
+        <div class="hero-point"><span></span> Fluxos com feedback visual facil</div>
+      </div>
+    </section>
+
+    <section class="login-card auth-card" data-tilt-card>
+      <div class="auth-card-top">
+        <p class="auth-kicker">Acesso do usuario</p>
+        <h2>Entrar no sistema</h2>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alerts">
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="/" class="auth-form">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="seu@email.com" required>
+        </div>
+
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" name="senha" placeholder="Digite sua senha" required>
+        </div>
+
+        <button class="btn primary btn-block" type="submit">Entrar</button>
+      </form>
+
+      <div class="auth-footer">
+        <p class="hint">Nao tem conta?</p>
+        <a class="link" href="{{ url_for('cadastro') }}">Solicitar cadastro</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

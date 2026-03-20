@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard</title>
+  <link rel="icon" href="{{ url_for('favicon') }}?v=2" sizes="any">
+  <link rel="shortcut icon" href="{{ url_for('favicon') }}?v=2" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body
+  data-user-id="{{ user.id }}"
+  data-page="dashboard"
+  data-save-url="{{ url_for('novo_projeto') }}"
+  data-upload-url="{{ url_for('importar_demandas_excel') }}"
+  data-default-avatar="{{ url_for('static', filename='avatar.png') }}"
+  data-example-url="{{ exemplo_excel_url }}"
+>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="{{ url_for('favicon') }}?v=2" alt="SiteJP">
+      <span>SiteJP</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn primary" id="btnOpenModal">+ Novo Projeto</button>
+      <div class="profile" id="profile">
+        <button class="profile-btn" id="profileBtn" type="button" aria-expanded="false">
+          <img class="avatar" id="avatarTop" src="{{ url_for('static', filename='avatar.png') }}" alt="Perfil">
+          <span class="caret">▾</span>
+        </button>
+        <div class="profile-menu" id="profileMenu">
+          <div class="menu-info">
+            <div class="menu-label">Empresa</div>
+            <div class="menu-value">{{ user.empresa }}</div>
+          </div>
+          <div class="menu-sep"></div>
+          <button class="menu-item" id="btnOpenSettings" type="button">Configuracoes</button>
+          <a class="menu-item danger" href="{{ url_for('logout') }}">Sair</a>
+        </div>
+
+        <div class="profile-panel" id="profilePanel">
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h3>Foto de perfil</h3>
+              <input type="file" id="avatarInput" accept="image/*">
+              <small>Salva localmente no navegador.</small>
+            </div>
+            <div class="settings-card full">
+              <h3>Alterar senha</h3>
+              <div class="grid">
+                <div class="field">
+                  <label for="senhaAtual">Senha atual</label>
+                  <input id="senhaAtual" type="password" />
+                </div>
+                <div class="field">
+                  <label for="senhaNova">Nova senha</label>
+                  <input id="senhaNova" type="password" />
+                </div>
+                <div class="field full">
+                  <label for="senhaConf">Confirmar nova senha</label>
+                  <input id="senhaConf" type="password" />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn primary" id="btnSalvarSenha" type="button">Salvar senha</button>
+              </div>
+              <p class="form-error" id="senhaError" hidden></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="dashboard-hero">
+      <div>
+        <p class="eyebrow">Workspace operacional</p>
+        <h1 class="page-title">Projetos de {{ user.empresa }}</h1>
+        <p class="page-subtitle">Crie analises por funcionario, importe demandas por Excel e acompanhe previsoes com uma interface mais direta.</p>
+      </div>
+      <div class="hero-mini-stats">
+        <div class="hero-mini-card">
+          <span>Projetos</span>
+          <strong class="js-count" data-count="{{ projetos|length }}">0</strong>
+        </div>
+      </div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts alerts--inline">
+          {% for category, message in messages %}
+            <div class="alert {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="cards" id="cards">
+      {% if projetos %}
+        {% for p in projetos %}
+          <a class="card card-link" href="{{ url_for('projeto_detalhe', projeto_id=p.id) }}" data-id="{{ p.id }}">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">{{ p.nome }}</h2>
+                {% if p.responsavel %}
+                  <p class="card-subline">Funcionario: <b>{{ p.responsavel }}</b></p>
+                {% endif %}
+              </div>
+              <span class="badge">{{ p.periodos }} periodos</span>
+            </div>
+            <p class="card-desc">{{ p.descricao }}</p>
+            {% if p.melhor_metodo %}
+              <div class="card-meta">
+                <span class="meta-item">Metodo: <b>{{ display_method_name(p.melhor_metodo) }}</b></span>
+                <span class="meta-item">MAD: <b>{{ '%.2f'|format(p.mad or 0) }}</b></span>
+              </div>
+            {% endif %}
+            <div class="card-actions">
+              <button class="card-delete" type="button" data-id="{{ p.id }}" data-nome="{{ p.nome }}">Excluir projeto</button>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><p>Nenhum projeto ainda. Clique em "Novo Projeto".</p></div>
+      {% endif %}
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="sheet sheet--modal" id="sheetProjeto" hidden>
+    <div class="sheet-header">
+      <h2>Criar novo projeto</h2>
+      <button class="icon-btn" id="btnCloseProjeto" type="button" aria-label="Fechar">X</button>
+    </div>
+    <form class="form" id="formProjeto">
+      <div class="grid grid--project">
+        <div class="field">
+          <label for="nome">Nome do projeto</label>
+          <input id="nome" name="nome" type="text" placeholder="Ex: Demanda Clinica Estetica" required />
+        </div>
+        <div class="field">
+          <label for="responsavel">Funcionario</label>
+          <input id="responsavel" name="responsavel" type="text" placeholder="Nome do colaborador" required />
+        </div>
+        <div class="field full">
+          <label for="descricao">Descricao</label>
+          <textarea id="descricao" name="descricao" rows="3" placeholder="Descreva o objetivo do projeto" required></textarea>
+        </div>
+      </div>
+
+      <div class="demanda-wrap">
+        <div class="demanda-head">
+          <div>
+            <h3>Entrada das demandas</h3>
+            <small id="demandaHint">Digite manualmente ou importe um Excel no formato correto.</small>
+          </div>
+        </div>
+
+        <div class="input-mode-switch" id="inputModeSwitch">
+          <button class="btn primary mode-btn is-active" type="button" data-mode="manual">Digitar demandas</button>
+          <button class="btn ghost mode-btn" type="button" data-mode="excel">Importar Excel</button>
+        </div>
+
+        <section class="mode-panel is-active" id="manualPanel" data-mode-panel="manual">
+          <div class="field field--narrow">
+            <label for="periodos">Periodos</label>
+            <input id="periodos" name="periodos" type="number" min="2" placeholder="Ex: 12" required />
+          </div>
+          <div class="demanda-grid" id="camposDemanda"></div>
+        </section>
+
+        <section class="mode-panel" id="excelPanel" data-mode-panel="excel" hidden>
+          <div class="excel-upload-card">
+            <div class="field">
+              <label for="excelFile">Arquivo Excel (.xlsx)</label>
+              <input id="excelFile" type="file" accept=".xlsx" />
+            </div>
+            <div class="excel-upload-actions">
+              <button class="btn ghost" type="button" id="btnImportExcel">Ler arquivo</button>
+              <button class="icon-btn info-btn" id="btnExcelInfo" type="button" aria-label="Formato do Excel">i</button>
+              <span class="excel-status" id="excelStatus">Nenhum arquivo carregado.</span>
+            </div>
+          </div>
+          <div class="import-preview" id="importPreview" hidden>
+            <span class="badge" id="importBadge">0 periodos importados</span>
+            <div class="import-preview-values" id="importPreviewValues"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn ghost" id="btnCancelProjeto" type="button">Cancelar</button>
+        <button class="btn primary" id="btnSave" type="submit">Salvar</button>
+      </div>
+      <p class="form-error" id="formError" hidden></p>
+    </form>
+  </div>
+
+  <div class="sheet sheet--confirm" id="sheetDelete" hidden>
+    <div class="sheet-header">
+      <h2>Excluir projeto</h2>
+      <button class="icon-btn" id="btnCloseDelete" type="button" aria-label="Fechar">X</button>
+    </div>
+    <div class="form">
+      <p id="deleteInfo">Para confirmar, digite <b>DELETAR</b>.</p>
+      <div class="field">
+        <label for="deleteConfirm">Confirmacao</label>
+        <input id="deleteConfirm" type="text" placeholder="Digite: DELETAR">
+      </div>
+      <div class="form-actions">
+        <button class="btn ghost" id="btnCancelDelete" type="button">Cancelar</button>
+        <button class="btn primary danger-btn" id="btnDoDelete" type="button">Apagar projeto</button>
+      </div>
+      <p class="form-error" id="deleteError" hidden></p>
+    </div>
+  </div>
+
+  <div class="sheet sheet--confirm sheet--info" id="sheetExcelInfo" hidden>
+    <div class="sheet-header">
+      <h2>Formato do Excel</h2>
+      <button class="icon-btn" id="btnCloseExcelInfo" type="button" aria-label="Fechar">X</button>
+    </div>
+    <div class="form form--info">
+      <p>Use este formato <b>Periodo</b> e <b>D.Real</b> para a importacao funcionar corretamente.</p>
+      <img class="excel-example-image" src="{{ exemplo_excel_url }}" alt="Exemplo de planilha">
+      <div class="form-actions">
+        <button class="btn primary" id="btnExcelInfoOk" type="button">Entendi</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

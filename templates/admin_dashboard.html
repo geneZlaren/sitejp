@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - SiteJP</title>
+  <link rel="icon" href="{{ url_for('favicon') }}?v=2" sizes="any">
+  <link rel="shortcut icon" href="{{ url_for('favicon') }}?v=2" type="image/x-icon">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+  <header class="topbar">
+    <div class="brand brand--auth">
+      <img class="brand-logo" src="{{ url_for('favicon') }}?v=2" alt="SiteJP">
+      <span>SiteJP Admin</span>
+    </div>
+    <div class="topbar-actions">
+      <a class="btn ghost" href="{{ url_for('login') }}">Area do usuario</a>
+      <a class="btn primary" href="{{ url_for('logout') }}">Sair</a>
+    </div>
+  </header>
+
+  <main class="page page--admin">
+    <section class="admin-hero">
+      <div>
+        <p class="eyebrow">Governanca de acessos</p>
+        <h1 class="page-title">Administracao de usuarios</h1>
+        <p class="page-subtitle">Aprove, bloqueie ou remova contas antes do acesso ao sistema.</p>
+      </div>
+      <div class="admin-stats">
+        <div class="stat-card">
+          <span>Total</span>
+          <strong>{{ total }}</strong>
+        </div>
+        <div class="stat-card stat-card--accent">
+          <span>Pendentes</span>
+          <strong>{{ pendentes }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Ativos</span>
+          <strong>{{ ativos }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-toolbar">
+      <form class="toolbar-form" method="GET" action="{{ url_for('admin_dashboard') }}">
+        <div class="field">
+          <label>Buscar</label>
+          <input type="text" name="q" value="{{ termo }}" placeholder="Email ou empresa">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select name="status">
+            <option value="todos" {% if filtro == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="pendentes" {% if filtro == 'pendentes' %}selected{% endif %}>Pendentes</option>
+            <option value="ativos" {% if filtro == 'ativos' %}selected{% endif %}>Ativos</option>
+          </select>
+        </div>
+        <button class="btn ghost" type="submit">Filtrar</button>
+      </form>
+    </section>
+
+    <section class="admin-table-card">
+      {% if usuarios %}
+        <div class="table-wrap">
+          <table class="tabela admin-table">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Acoes</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTable">
+              {% for usuario in usuarios %}
+                <tr data-user-row data-user-id="{{ usuario.id }}">
+                  <td>{{ usuario.empresa }}</td>
+                  <td>{{ usuario.email }}</td>
+                  <td>
+                    <span class="status-pill {% if usuario.aprovado %}status-pill--ok{% else %}status-pill--pending{% endif %}" data-status-pill>
+                      {% if usuario.aprovado %}Ativo{% else %}Pendente{% endif %}
+                    </span>
+                  </td>
+                  <td class="admin-actions">
+                    {% if usuario.aprovado %}
+                      <button class="btn ghost admin-action" type="button" data-action="reprovar" data-id="{{ usuario.id }}">Desativar</button>
+                    {% else %}
+                      <button class="btn primary admin-action" type="button" data-action="aprovar" data-id="{{ usuario.id }}">Aprovar</button>
+                    {% endif %}
+                    <button class="btn admin-delete" type="button" data-action="deletar" data-id="{{ usuario.id }}" data-email="{{ usuario.email }}">Excluir</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          <p>Nenhum usuario encontrado para esse filtro.</p>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <div class="sheet sheet--confirm" id="deleteUserSheet" hidden>
+    <div class="sheet-header">
+      <h2>Excluir usuario</h2>
+      <button class="icon-btn" id="btnCloseDeleteUser" type="button" aria-label="Fechar">X</button>
+    </div>
+    <div class="form">
+      <p id="deleteUserInfo">Digite <b>DELETAR</b> para confirmar a exclusao.</p>
+      <div class="field">
+        <label for="deleteUserConfirm">Confirmacao</label>
+        <input id="deleteUserConfirm" type="text" placeholder="Digite: DELETAR">
+      </div>
+      <div class="form-actions">
+        <button class="btn ghost" id="btnCancelDeleteUser" type="button">Cancelar</button>
+        <button class="btn primary danger-btn" id="btnDoDeleteUser" type="button">Excluir usuario</button>
+      </div>
+      <p class="form-error" id="deleteUserError" hidden></p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>
