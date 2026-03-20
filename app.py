@@ -33,7 +33,13 @@ def _palette(idx):
 
 
 def _database_uri():
-    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL")
+    database_url = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("DATABASE_PRIVATE_URL")
+        or os.getenv("DATABASE_PUBLIC_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("POSTGRES_PRIVATE_URL")
+    )
     if database_url:
         if database_url.startswith("postgres://"):
             database_url = "postgresql+pg8000://" + database_url[len("postgres://"):]
@@ -41,14 +47,27 @@ def _database_uri():
             database_url = "postgresql+pg8000://" + database_url[len("postgresql://"):]
         return database_url
 
+    railway_env = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID")
+    pg_host = os.getenv("POSTGRES_HOST") or os.getenv("PGHOST")
+    pg_user = os.getenv("POSTGRES_USER") or os.getenv("PGUSER")
+    pg_password = os.getenv("POSTGRES_PASSWORD") or os.getenv("PGPASSWORD")
+    pg_database = os.getenv("POSTGRES_DB") or os.getenv("PGDATABASE")
+    pg_port = os.getenv("POSTGRES_PORT") or os.getenv("PGPORT")
+
+    if railway_env and not any([pg_host, pg_user, pg_password, pg_database, pg_port]):
+        raise RuntimeError(
+            "Variaveis do PostgreSQL nao foram configuradas no servico web do Railway. "
+            "Defina DATABASE_URL=${{Postgres.DATABASE_URL}} ou vincule PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE."
+        )
+
     return str(
         URL.create(
             "postgresql+pg8000",
-            username=os.getenv("POSTGRES_USER") or os.getenv("PGUSER") or "postgres",
-            password=os.getenv("POSTGRES_PASSWORD") or os.getenv("PGPASSWORD") or "pepito1",
-            host=os.getenv("POSTGRES_HOST") or os.getenv("PGHOST") or "localhost",
-            port=int(os.getenv("POSTGRES_PORT") or os.getenv("PGPORT") or "5432"),
-            database=os.getenv("POSTGRES_DB") or os.getenv("PGDATABASE") or "SiteJP",
+            username=pg_user or "postgres",
+            password=pg_password or "pepito1",
+            host=pg_host or "localhost",
+            port=int(pg_port or "5432"),
+            database=pg_database or "SiteJP",
         )
     )
 
